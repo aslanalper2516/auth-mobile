@@ -1,83 +1,87 @@
-import { View, StyleSheet, Text, TextInput, Pressable } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import axios from 'axios';
 
-export default function LoginPage() {
+const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [responseText, setResponseText] = useState('');
 
-  const handleLogin = () => {
-    // Buraya role check veya API isteği ekleyebilirsin
-    if (email === 'admin@example.com' && password === 'admin') {
-      router.push('/admin');
-    } else if (email === 'customer@example.com' && password === 'customer') {
-      router.push('/customer');
-    } else {
-      alert('Geçersiz giriş bilgisi');
+  const handleLogin = async () => {
+    try {
+      const res = await axios.post(
+        'http://localhost:3000/auth/login',
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json', // 🔥 garanti olsun diye ekledik
+          },
+        }
+      );
+
+      setResponseText(`✅ Giriş Başarılı:\n${JSON.stringify(res.data, null, 2)}`);
+    } catch (err) {
+      console.log('GÖNDERİLEN VERİ:', { email, password });
+      console.log('🧨 Giriş hatası:', err?.response?.data || err);
+      setResponseText(
+        `❌ Giriş Hatası: ${err?.response?.data?.message || err.message}`
+      );
     }
   };
 
   return (
-    <>
-      <Stack.Screen options={{ title: 'Giriş Yap' }} />
-      <View style={styles.container}>
-        <Text style={styles.title}>GİRİŞ YAP</Text>
+    <View style={styles.container}>
+      <Text style={styles.label}>Email</Text>
+      <TextInput
+        style={styles.input}
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
 
-        <TextInput
-          style={styles.input}
-          placeholder="E-posta"
-          value={email}
-          onChangeText={setEmail}
-        />
+      <Text style={styles.label}>Şifre</Text>
+      <TextInput
+        style={styles.input}
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Şifre"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        <Pressable onPress={handleLogin} style={styles.button}>
-          <Text style={styles.buttonText}>Giriş Yap</Text>
-        </Pressable>
-      </View>
-    </>
+      <Button title="Giriş Yap" onPress={handleLogin} />
+      <Text style={styles.response}>{responseText}</Text>
+    </View>
   );
-}
+};
+
+export default LoginPage;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 24,
     justifyContent: 'center',
-    backgroundColor: '#f2f2f2',
+    padding: 20,
+    backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    alignSelf: 'center',
-    marginBottom: 32,
+  label: {
+    fontSize: 16,
+    marginTop: 10,
   },
   input: {
-    height: 50,
-    color: "black",
-    backgroundColor: 'white',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    fontSize: 16,
-    fontWeight: 'bold',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 8,
+    borderRadius: 4,
+    marginTop: 4,
+    marginBottom: 10,
   },
-  button: {
-    backgroundColor: '#1e40af',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
+  response: {
+    marginTop: 20,
+    fontSize: 14,
+    color: 'green',
   },
 });
